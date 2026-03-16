@@ -18,7 +18,7 @@
   - Billing Info
   - Transaction ID
   - Order Notes
-- ⏳ ** Initiating payment** notification – get notified when a customer begins the payment process (pending)
+- ⏳ Initiating payment notification – get notified when a customer begins the payment process (pending)
 - 🖼️ Optionally disable product image in embed
 - 🎯 Custom webhook & embed color per order status
 - 🔒 Prevent duplicate Discord notifications using internal log tracking
