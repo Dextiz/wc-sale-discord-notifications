@@ -18,7 +18,7 @@
   - Billing Info
   - Transaction ID
   - Order Notes
-- 📤 **Initiating Payment** notification – get notified when a customer starts checkout (pending) before payment completes
+- ⏳ ** Initiating payment** notification – get notified when a customer begins the payment process (pending)
 - 🖼️ Optionally disable product image in embed
 - 🎯 Custom webhook & embed color per order status
 - 🔒 Prevent duplicate Discord notifications using internal log tracking
@@ -60,7 +60,7 @@
    Toggle to prevent product image from appearing in the embed.
 
 5. **Send notification for Initiating payments**  
-   When enabled, sends a distinct "Initiating payment" notification for pending orders. When payment completes, sends "New order" for processing.
+   When enabled, sends a distinct "⏳ Initiating payment" notification for pending orders. When payment completes, sends "🎉 New Order!" for processing.
 
 ---
 
@@ -95,7 +95,7 @@ Pull requests welcome!
 ### 3.1
 - Notification for Initiating Payment (when order is placed with pending status, before payment completes)
 - Embedded fields for Order Notes
-- When Initiating Payments is enabled: sends "Initiating payment" for pending orders, then "New order" when payment completes (processing)
+- When Initiating Payments is enabled: sends "⏳ Initiating payment" for pending orders, then "🎉 New Order!" when payment completes (processing)
 
 ### 3.0
 - Updated plugin logo
