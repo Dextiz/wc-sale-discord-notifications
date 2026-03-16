@@ -1,5 +1,5 @@
 === WC Sale Discord Notifications ===
-Contributors: cralcactus
+Contributors: cralcactus, Dextiz (ComFoo)
 Tags: discord, woocommerce, notifications, sales, orders
 Requires at least: 6.2
 Tested up to: 6.9.4
@@ -24,6 +24,8 @@ This plugin sends a Discord notification for WooCommerce order events. It uses n
   * 📅 Order Date
   * 👤 Billing Info
   * 🔢 Transaction ID
+  * 📜 Order Notes
+
 * 🖼️ Option to disable product image in the embed
 * 🧩 Per-status webhook URL and embed color
 * 🔒 Duplicate-send protection via internal tracking
