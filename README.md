@@ -3,70 +3,134 @@
 [![GitHub release](https://img.shields.io/github/release/Cral-Cactus/wc-sale-discord-notifications.svg)](https://github.com/Cral-Cactus/wc-sale-discord-notifications/releases)
 [![GitHub issues](https://img.shields.io/github/issues/Cral-Cactus/wc-sale-discord-notifications.svg)](https://github.com/Cral-Cactus/wc-sale-discord-notifications/issues/)
 
-This plugin sends a notification to a Discord channel whenever a sale is made on WooCommerce. It is highly customizable, allowing notifications for different order statuses and the ability to configure the webhook URL and message colors.
+> A powerful WooCommerce extension that sends order updates directly to your Discord server. Now with configurable message fields, status-specific webhooks, and built-in duplicate protection via logging.
 
-## Features
+---
 
-- Sends a Discord notification when a sale is made on WooCommerce.
-- Customizable order statuses for notifications.
-- Configure different webhook URLs for different order statuses.
-- Color-coded notifications based on order status.
-- Optionally exclude product images from embeds.
+## ✨ Features
 
-## Requirements
+- ✅ Customizable message fields:
+  - Order Status
+  - Payment Info
+  - Product Lines (names, qty, price)
+  - Product Options (add-ons / Custom fields)
+  - Order Date
+  - Billing Info
+  - Transaction ID
+  - Order Notes
+- 📤 **Initiating Payment** notification – get notified when a customer starts checkout (pending) before payment completes
+- 🖼️ Optionally disable product image in embed
+- 🎯 Custom webhook & embed color per order status
+- 🔒 Prevent duplicate Discord notifications using internal log tracking
+- ⚙️ Built using native WordPress/WooCommerce APIs
+- 🧠 Compatible with WooCommerce Custom Order Tables (v8+)
 
-- WordPress 6.2 or higher (tested up to 6.6.2)
-- WooCommerce 8.5 or higher (tested up to 9.3.3)
+---
 
-## Installation
+## 🧰 Requirements
 
-1. Download the plugin from the [GitHub repository](https://github.com/Cral-Cactus/wc-sale-discord-notifications).
-2. Upload the plugin files to the `/wp-content/plugins/wc-sale-discord-notifications` directory, or install the plugin through the WordPress plugins screen directly.
-3. Activate the plugin through the 'Plugins' screen in WordPress.
-4. Navigate to WooCommerce > Discord Notifications to configure the plugin.
+- WordPress 6.2 or higher (tested up to 6.8.2)
+- WooCommerce 8.5 or higher (tested up to 10.1.2)
 
-## Configuration
+---
 
-1. **Webhook URL**: Enter the Discord Webhook URL where notifications will be sent.
-2. **Order Status Notifications**: Select the order statuses for which you want to send notifications. You can also specify different webhook URLs and colors for each status.
-3. **Disable Product Image in Embed**: Check this option if you wish to omit product images from the embed.
+## 🔧 Installation
 
-## Usage
+1. Download this plugin or clone the repo into `/wp-content/plugins/wc-sale-discord-notifications`
+2. Activate the plugin via **Plugins > Installed Plugins**
+3. Navigate to **WooCommerce > Discord Notifications**
+4. Configure your settings
 
-1. After installing and activating the plugin, go to WooCommerce > Discord Notifications.
-2. Configure your Discord Webhook URL and select the order statuses you want to receive notifications for.
-3. Save your settings.
+---
 
-Whenever an order is placed, a notification will be sent to the specified Discord channel with details about the order.
+## ⚙️ Configuration
 
-## Contributing
+1. **Webhook URL**  
+   Enter your Discord Webhook URL (from your Discord server settings)
 
-1. Fork the repository on GitHub.
-2. Create a new branch for your feature or bug fix.
-3. Commit your changes and push the branch to GitHub.
-4. Open a pull request to the main branch.
+2. **Order Status Notifications**  
+   Choose which order statuses should trigger notifications. You can also:
+   - Add different webhook URLs per status
+   - Choose unique embed colors
 
-## Changelog
+3. **Information to Include**  
+   Select which fields should appear in the Discord embed.
+
+4. **Disable Product Image**  
+   Toggle to prevent product image from appearing in the embed.
+
+5. **Send notification for Initiating payments**  
+   When enabled, sends a distinct "Initiating payment" notification for pending orders. When payment completes, sends "New order" for processing.
+
+---
+
+## 🔒 Duplicate Protection
+
+To prevent duplicate Discord messages (e.g. when a user refreshes the thank-you page), a local file is used: discord_notification_log.txt
+
+Each entry logs `order_id|event_type`, e.g. `1655 |new`.  
+Before sending a message, the plugin checks if this log already contains that line.  
+If it does, it skips sending.
+
+This ensures each notification is only sent **once per order event**.
+
+---
+
+## 🧪 Development
+
+Built and maintained by:
+
+**Author:**
+- [Cral_Cactus](https://github.com/Cral-Cactus)
+
+**Contributors**
+- [Dex (ComFoo)](https://github.com/Dextiz)
+
+Pull requests welcome!
+
+---
+
+## 📜 Changelog
+
+### 3.1
+- Notification for Initiating Payment (when order is placed with pending status, before payment completes)
+- Embedded fields for Order Notes
+- When Initiating Payments is enabled: sends "Initiating payment" for pending orders, then "New order" when payment completes (processing)
+
+### 3.0
+- Updated plugin logo
+
+### 2.3
+- Add support for custom product fields in Discord notifications
+- New toggle "Custom Fields" in settings, (When enabled, product-level custom fields (from addons/APF) are included in order item details)
+
+### 2.2
+- Implemented per-status duplicate protection using order meta instead of global flag
+- Removed redundant duplicate-check logic and double log writes
+- Added sanitization callbacks for all plugin options to improve data safety
+- Made Discord webhook POST asynchronous (blocking => false) with basic error handling
+- Improved status change hook to only trigger on selected statuses
+- Enhanced embed field building with formatted totals, safe hex color handling, and image fallback
+- Updated “Tested up to” and “WC tested up to” versions
+  
+### 2.1
+- Admin setting: Choose what fields to include in Discord messages
+- Added protection against duplicate notifications using log file
+- Per-status webhook URL
+- Fully compatible with WooCommerce 8+ (custom order tables)
 
 ### 2.0
-- Order status notifications fix and added option to exclude product images from embeds.
+- Added support for excluding product image
 
 ### 1.9
-- Added notifications for changes in order status.
+- Added notifications for changes in order status
 
-### 1.8
-- Major changes.
+### 1.8 and below
+- Initial features and webhook sending
 
-### 1.7
-- Version update.
+---
 
-### 1.6
-- Initial release.
+## 💬 Support
 
-## Author
-
-[Cral_Cactus](https://github.com/Cral-Cactus)
-
-## Support
-
-If you have any questions or need help, feel free to open an issue on the [GitHub repository](https://github.com/Cral-Cactus/wc-sale-discord-notifications/issues).
+Found a bug? Have a suggestion?  
+Open an issue on the [GitHub repo](https://github.com/Cral-Cactus/wc-sale-discord-notifications/issues).
