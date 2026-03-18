@@ -75,7 +75,7 @@
 
 ## 🔒 Duplicate Protection
 
-To prevent duplicate Discord messages (e.g. when a user refreshes the thank-you page), the plugin stores sent-event metadata on each order (`_discord_sent_*`). Before sending, it checks whether that event was already sent within the last 120 seconds and skips if so.
+To prevent duplicate Discord messages (e.g. when a user refreshes the thank-you page), the plugin stores sent-event metadata on each order (`_discord_sent_*`). Initiating, new, and update notifications all use 120-second time-based deduplication. Before sending, the plugin checks whether that event was already sent within the last 120 seconds and skips if so.
 
 This ensures each notification is only sent **once per order event**.
 

@@ -44,11 +44,12 @@ class Sale_Discord_Notifications_Woo {
     }
 
     public function add_settings_page() {
+        $capability = apply_filters('wc_sale_discord_notifications_capability', 'manage_woocommerce');
         add_submenu_page(
             'woocommerce',
             __('Discord Notifications', 'wc-sale-discord-notifications'),
             __('Discord Notifications', 'wc-sale-discord-notifications'),
-            'manage_options',
+            $capability,
             self::PAGE_SLUG,
             array($this, 'notification_settings_page')
         );
@@ -148,6 +149,7 @@ class Sale_Discord_Notifications_Woo {
             __('Disable Product Image in Embed', 'wc-sale-discord-notifications'),
             function() {
                 $disable_image = get_option('wc_sale_discord_disable_image');
+                echo '<input type="hidden" name="wc_sale_discord_disable_image" value="0" />';
                 echo '<input type="checkbox" name="wc_sale_discord_disable_image" value="1"' . checked(1, $disable_image, false) . '/>';
             },
             self::OPTION_GROUP,
@@ -159,6 +161,7 @@ class Sale_Discord_Notifications_Woo {
             __('Send notification for Initiating payments', 'wc-sale-discord-notifications'),
             function() {
                 $enabled = (int) get_option('wc_sale_discord_notify_initiating_payment', 0);
+                echo '<input type="hidden" name="wc_sale_discord_notify_initiating_payment" value="0" />';
                 echo '<input type="checkbox" name="wc_sale_discord_notify_initiating_payment" value="1"' . checked(1, $enabled, false) . '/>';
                 echo '<p class="description">' . esc_html__('Notify when a customer starts checkout (pending) before payment is completed. Uses a separate embed title from completed orders.', 'wc-sale-discord-notifications') . '</p>';
             },
@@ -179,6 +182,7 @@ class Sale_Discord_Notifications_Woo {
             __('Customer notes only', 'wc-sale-discord-notifications'),
             function () {
                 $customer_only = (int) get_option('wc_sale_discord_order_notes_customer_only', 0);
+                echo '<input type="hidden" name="wc_sale_discord_order_notes_customer_only" value="0" />';
                 echo '<input type="checkbox" name="wc_sale_discord_order_notes_customer_only" value="1"' . checked(1, $customer_only, false) . '/>';
                 echo '<p class="description">' . esc_html__('When Order Notes is included, show only customer notes (exclude internal/admin notes).', 'wc-sale-discord-notifications') . '</p>';
             },
@@ -317,7 +321,7 @@ class Sale_Discord_Notifications_Woo {
         // Only fire for pending when customer lands on thank you page (manual/slow payments)
         if ($order->get_status() === 'pending') {
             if (get_option('wc_sale_discord_notify_initiating_payment')) {
-                $this->send_discord_notification_common($order_id, 'initiating');
+                $this->maybe_send_initiating_notification($order_id, $order);
             } else {
                 $this->send_discord_notification_common($order_id, 'new');
             }
@@ -455,15 +459,27 @@ class Sale_Discord_Notifications_Woo {
             return;
         }
 
+        // 120s deduplication for new/update: skip if same event was sent recently (thank-you refresh, repeated hooks)
+        if (in_array($type, array('new', 'update'), true)) {
+            $meta_key = '_discord_sent_' . $order_status_key . '_' . $type;
+            $recent_sent = $order->get_meta($meta_key);
+            if ($recent_sent) {
+                $sent_ts = strtotime($recent_sent);
+                if ($sent_ts && (current_time('timestamp') - $sent_ts) < 120) {
+                    return;
+                }
+            }
+        }
+
         $order_data = $order->get_data();
         $order_id = $order_data['id'];
         $order_status = ucwords(wc_get_order_status_name($order->get_status()));
-        $order_total = (string) round((float) $order_data['total'], 0);
+        $order_total = strip_tags($order->get_formatted_order_total());
         $order_currency = $order_data['currency'];
         $order_date = $order_data['date_created'] ?? null;
         $order_timestamp = ($order_date && is_object($order_date) && method_exists($order_date, 'getTimestamp')) ? $order_date->getTimestamp() : time();
-        $payment_method = $order_data['payment_method_title'];
-        $transaction_id = $order_data['transaction_id'];
+        $payment_method = !empty($order_data['payment_method_title']) ? $order_data['payment_method_title'] : $order->get_payment_method();
+        $transaction_id = !empty($order_data['transaction_id']) ? $order_data['transaction_id'] : $order->get_transaction_id();
         $billing_first_name = $order_data['billing']['first_name'];
         $billing_last_name = $order_data['billing']['last_name'];
         $billing_email = $order_data['billing']['email'];
@@ -478,10 +494,10 @@ class Sale_Discord_Notifications_Woo {
                 $first_product_image = wp_get_attachment_url($product->get_image_id());
             }
 
-            $product_name = $item->get_name();
+            $product_name = wp_strip_all_tags($item->get_name());
             $product_quantity = $item->get_quantity();
-            $product_total = (string) round((float) $item->get_total(), 0);
-            $items_list .= "{$product_quantity}x {$product_name} - {$product_total} {$order_currency}\n";
+            $product_total = strip_tags(wc_price((float) $item->get_total(), array('currency' => $order_currency)));
+            $items_list .= "{$product_quantity}x {$product_name} - {$product_total}\n";
         }
         $items_list = $this->truncate_discord_field(rtrim($items_list, "\n"));
 
@@ -506,7 +522,7 @@ class Sale_Discord_Notifications_Woo {
             $embed_fields[] = ['name' => 'Status', 'value' => $order_status, 'inline' => false];
         }
         if ($field_included('payment')) {
-            $embed_fields[] = ['name' => 'Payment', 'value' => "{$order_total} {$order_currency} - {$payment_method}", 'inline' => false];
+            $embed_fields[] = ['name' => 'Payment', 'value' => "{$order_total} - {$payment_method}", 'inline' => false];
         }
         if ($field_included('product')) {
             $embed_fields[] = ['name' => 'Product', 'value' => $items_list ?: '-', 'inline' => false];
@@ -555,8 +571,8 @@ class Sale_Discord_Notifications_Woo {
         $this->send_to_discord($webhook_url, $embed);
 
         // Track sent notifications for double-notification failsafe
-        if ($type === 'new' && $order) {
-            $order->update_meta_data('_discord_sent_' . $order_status_key . '_new', current_time('mysql'));
+        if (in_array($type, array('new', 'update'), true) && $order) {
+            $order->update_meta_data('_discord_sent_' . $order_status_key . '_' . $type, current_time('mysql'));
             $order->save();
         }
     }
@@ -704,11 +720,11 @@ class Sale_Discord_Notifications_Woo {
             if (!method_exists($item, 'get_formatted_meta_data')) {
                 continue;
             }
-            $meta_data = $item->get_formatted_meta_data('', true);
+            $meta_data = $item->get_formatted_meta_data('_', true);
             if (empty($meta_data)) {
                 continue;
             }
-            $item_name = $item->get_name();
+            $item_name = wp_strip_all_tags($item->get_name());
             foreach ($meta_data as $meta) {
                 $key = isset($meta->display_key) ? $meta->display_key : '';
                 $val = isset($meta->display_value) ? wp_strip_all_tags($meta->display_value) : '';
@@ -730,13 +746,14 @@ class Sale_Discord_Notifications_Woo {
         $data = wp_json_encode(['embeds' => [$embed]]);
 
         $args = [
-            'body' => $data,
+            'body'    => $data,
             'headers' => ['Content-Type' => 'application/json'],
-            'timeout' => 60,
+            'timeout' => 10,
+            'blocking' => false,
         ];
-
         if (get_option('wc_sale_discord_force_blocking')) {
             $args['blocking'] = true;
+            $args['timeout']  = 60;
         }
 
         $response = wp_remote_post($webhook_url, $args);

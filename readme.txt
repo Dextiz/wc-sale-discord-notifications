@@ -32,7 +32,7 @@ This plugin sends a Discord notification for WooCommerce order events. It uses n
 * Customer notes only toggle – exclude internal/admin notes when Order Notes is included
 * Option to disable product image in the embed
 * Per-status webhook URL and embed color
-* Duplicate-send protection via order meta for the initiating → new order flow (120s window)
+* Duplicate-send protection via order meta (120s deduplication for initiating, new, and update)
 * Automatic embed size trimming for Discord's 6000 character limit
 * Built using native WordPress/WooCommerce APIs
 * Compatible with WooCommerce Custom Order Tables (HPOS)
@@ -74,7 +74,7 @@ This plugin sends a Discord notification for WooCommerce order events. It uses n
 
 == Duplicate Protection ==
 
-To reduce duplicate Discord messages around checkout (for example, if the thank-you page is refreshed), the plugin stores sent-event metadata on each order for the **initiating payment** → **new order** flow. If an initiating payment notification was sent for an order within the last 120 seconds, the plugin will not resend that initiating notification on refresh and may suppress an immediate follow-up "New Order!" notification triggered right after it. Other status-based notifications are sent whenever their configured triggers fire and are not time-deduplicated by this mechanism.
+To prevent duplicate Discord messages (for example, if the thank-you page is refreshed), the plugin stores sent-event metadata on each order (`_discord_sent_*`). Initiating, new, and update notifications all use 120-second time-based deduplication. Before sending, the plugin checks whether that event was already sent within the last 120 seconds and skips if so. This ensures each notification is only sent **once per order event**.
 
 == Usage ==
 
