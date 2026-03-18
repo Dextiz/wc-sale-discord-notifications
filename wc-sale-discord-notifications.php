@@ -3,7 +3,7 @@
  * Plugin Name: WC Sale Discord Notifications
  * Plugin URI: https://github.com/Cral-Cactus/wc-sale-discord-notifications
  * Description: Sends a notification to a Discord channel when a sale is made or order status is changed on WooCommerce.
- * Version: 3.1.1
+ * Version: 3.1.2
  * Author: Cral_Cactus
  * Author URI: https://github.com/Cral-Cactus
  * Requires Plugins: woocommerce
@@ -474,7 +474,7 @@ class Sale_Discord_Notifications_Woo {
         $order_data = $order->get_data();
         $order_id = $order_data['id'];
         $order_status = ucwords(wc_get_order_status_name($order->get_status()));
-        $order_total = strip_tags($order->get_formatted_order_total());
+        $order_total = html_entity_decode(strip_tags($order->get_formatted_order_total()), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $order_currency = $order_data['currency'];
         $order_date = $order_data['date_created'] ?? null;
         $order_timestamp = ($order_date && is_object($order_date) && method_exists($order_date, 'getTimestamp')) ? $order_date->getTimestamp() : time();
@@ -496,7 +496,7 @@ class Sale_Discord_Notifications_Woo {
 
             $product_name = wp_strip_all_tags($item->get_name());
             $product_quantity = $item->get_quantity();
-            $product_total = strip_tags(wc_price((float) $item->get_total(), array('currency' => $order_currency)));
+            $product_total = html_entity_decode(strip_tags(wc_price((float) $item->get_total(), array('currency' => $order_currency))), ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $items_list .= "{$product_quantity}x {$product_name} - {$product_total}\n";
         }
         $items_list = $this->truncate_discord_field(rtrim($items_list, "\n"));
@@ -512,7 +512,7 @@ class Sale_Discord_Notifications_Woo {
             return !$use_info_fields || in_array($key, $info_fields, true);
         };
 
-        $embed_title = ($type === 'initiating') ? '⏳ Initiating payment' : (($type === 'new') ? '🎉 New Order!' : '🪄 Order Update!');
+        $embed_title = $this->get_embed_title($order, $type);
 
         $embed_fields = [
             ['name' => 'Order ID', 'value' => "[#{$order_id}]({$order_edit_url})", 'inline' => false],
@@ -575,6 +575,30 @@ class Sale_Discord_Notifications_Woo {
             $order->update_meta_data('_discord_sent_' . $order_status_key . '_' . $type, current_time('mysql'));
             $order->save();
         }
+    }
+
+    /**
+     * Get embed title based on notification type and order (subscription-aware when WC Subscriptions is active).
+     *
+     * @param WC_Order $order Order object.
+     * @param string   $type  Notification type: 'new', 'update', or 'initiating'.
+     * @return string Embed title.
+     */
+    private function get_embed_title($order, string $type): string {
+        if ($type === 'initiating') {
+            $title = '⏳ Initiating payment';
+        } elseif (function_exists('wcs_order_contains_subscription')) {
+            if (wcs_order_contains_subscription($order, 'renewal')) {
+                $title = '🔄 Subscription Renewal';
+            } elseif (wcs_order_contains_subscription($order, 'parent') && $type === 'new') {
+                $title = '📦 New subscription';
+            } else {
+                $title = ($type === 'new') ? '🎉 New Order!' : '🪄 Order Update!';
+            }
+        } else {
+            $title = ($type === 'new') ? '🎉 New Order!' : '🪄 Order Update!';
+        }
+        return apply_filters('wc_sale_discord_embed_title', $title, $order, $type);
     }
 
     /**

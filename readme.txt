@@ -3,7 +3,7 @@ Contributors: cralcactus, Dextiz (ComFoo)
 Tags: discord, woocommerce, notifications, sales, orders
 Requires at least: 6.2
 Tested up to: 6.9.4
-Stable tag: 3.1.1
+Stable tag: 3.1.2
 Requires PHP: 8.0
 WC requires at least: 8.5
 WC tested up to: 10.6.1
@@ -36,6 +36,7 @@ This plugin sends a Discord notification for WooCommerce order events. It uses n
 * Automatic embed size trimming for Discord's 6000 character limit
 * Built using native WordPress/WooCommerce APIs
 * Compatible with WooCommerce Custom Order Tables (HPOS)
+* Subscription-aware titles when WooCommerce Subscriptions is active (New subscription, Subscription Renewal)
 
 == Requirements ==
 
@@ -90,6 +91,11 @@ To prevent duplicate Discord messages (for example, if the thank-you page is ref
 
 == Changelog ==
 
+= 3.1.2 =
+* Subscription-aware embed titles when WooCommerce Subscriptions is active (New subscription, Subscription Renewal)
+* HTML entity decoding for price display so currency symbols render correctly in Discord (e.g. kr, €, £)
+* Filter `wc_sale_discord_embed_title` for customizing embed titles
+
 = 3.1.1 =
 * Customer notes only toggle – exclude internal/admin notes when Order Notes is included
 * Automatic embed size trimming to fit Discord's 6000 character limit
@@ -135,6 +141,9 @@ To prevent duplicate Discord messages (for example, if the thank-you page is ref
 * Initial features and webhook sending.
 
 == Upgrade Notice ==
+
+= 3.1.2 =
+Subscription-aware titles, correct currency display in Discord, and embed title filter. Requires PHP 8.0+.
 
 = 3.1.1 =
 Customer notes only toggle, embed size trimming, webhook error logging, and code quality improvements. Requires PHP 8.0+.

@@ -26,6 +26,7 @@
 - 📏 Automatic embed size trimming (Discord 6000 char limit)
 - ⚙️ Built using native WordPress/WooCommerce APIs
 - 🧠 Compatible with WooCommerce Custom Order Tables (HPOS)
+- 📦 Subscription-aware titles when WooCommerce Subscriptions is active (New subscription, Subscription Renewal)
 
 ---
 
@@ -96,6 +97,11 @@ Pull requests welcome!
 ---
 
 ## 📜 Changelog
+
+### 3.1.2
+- Subscription-aware embed titles when WooCommerce Subscriptions is active (New subscription, Subscription Renewal)
+- HTML entity decoding for price display so currency symbols render correctly in Discord (e.g. kr, €, £)
+- Filter `wc_sale_discord_embed_title` for customizing embed titles
 
 ### 3.1.1
 - Customer notes only toggle – exclude internal/admin notes when Order Notes is included
